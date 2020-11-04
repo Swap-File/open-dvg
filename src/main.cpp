@@ -1,8 +1,7 @@
-
 #include <Arduino.h>
-
 #include "dac.h"
 #include "draw.h"
+#include "assets.h"
 
 static int fps = 0;
 static uint32_t fps_time = 0;
@@ -21,9 +20,10 @@ bool test_pattern_loaded;
 #define FLAG_EXIT 0x7
 #define FLAG_FRAME 0x4
 
-void setup() {
-  Serial.begin(115200);   // USB is always 12 Mbit/sec
-  Serial1.begin(115200);  // Debug
+void setup()
+{
+  Serial.begin(115200);  // USB is always 12 Mbit/sec
+  Serial1.begin(115200); // Debug
 
   dac_init();
   draw_test_pattern();
@@ -31,7 +31,8 @@ void setup() {
 }
 
 // return 1 when frame is complete, otherwise return 0
-static int read_data() {
+static int read_data()
+{
   static uint32_t cmd = 0;
   static int frame_offset = 0;
   static uint8_t brightness = 0;
@@ -40,14 +41,16 @@ static int read_data() {
 
   cmd = cmd << 8 | c;
   frame_offset++;
-  if (frame_offset < 4) return 0;
+  if (frame_offset < 4)
+    return 0;
 
   frame_offset = 0;
 
   uint8_t header = (cmd >> 29) & 0b00000111;
 
   // common case first
-  if (header == FLAG_XY) {
+  if (header == FLAG_XY)
+  {
     uint32_t y = (cmd >> 0) & 0x3fff;
     uint32_t x = (cmd >> 14) & 0x3fff;
 
@@ -56,7 +59,9 @@ static int read_data() {
       draw_append(x, y, 0);
     else
       draw_append(x, y, brightness);
-  } else if (header == FLAG_RGB) {
+  }
+  else if (header == FLAG_RGB)
+  {
     // pick the max brightness from r g and b
     brightness =
         max(max((cmd >> 0) & 0xFF, (cmd >> 8) & 0xFF), (cmd >> 16) & 0xFF);
@@ -64,51 +69,64 @@ static int read_data() {
     brightness = brightness >> 2;
   }
 
-  else if (header == FLAG_FRAME) {
+  else if (header == FLAG_FRAME)
+  {
     // uint32_t frame_complexity = cmd & 0b0001111111111111111111111111111;
     // Serial1.println(frame_complexity);
     // TODO: Use frame_complexity to adjust screen writing algorithms
-    draw_new_scene();
+    draw_clear_scene();
     frame_start_time = millis();
-  } else if (header == FLAG_COMPLETE) {
+  }
+  else if (header == FLAG_COMPLETE)
+  {
     fps++;
-    return 1;  // start rendering!
+    return 1; // start rendering!
   }
 
   return 0;
 }
 
-void loop() {
+void loop()
+{
   static uint32_t total_serial_time = 0;
   static uint32_t total_draw_time = 0;
   static uint32_t total_dac_time = 0;
 
   uint32_t serial_start_time = millis();
-  while (1) {
-    if (Serial.available()) {
-      test_pattern_loaded = false;
-      if (read_data()) break;
-    }
-    if (millis() - serial_start_time > MAXIMUM_SERIAL_MS) {
-      if (test_pattern_loaded == false) {
-        draw_test_pattern();
-        test_pattern_loaded = true;
-      }
-      break;
-    }
-  };
 
+  if (Serial.available() || !test_pattern_loaded)
+  {
+    while (1)
+    {
+      if (Serial.available())
+      {
+        test_pattern_loaded = false;
+        if (read_data())
+          break;
+      }
+      if (millis() - serial_start_time > MAXIMUM_SERIAL_MS)
+      {
+        if (test_pattern_loaded == false)
+        {
+          draw_test_pattern();
+          test_pattern_loaded = true;
+        }
+        break;
+      }
+    }
+  }
   total_serial_time = total_serial_time + (millis() - serial_start_time);
 
   uint32_t draw_start_time = millis();
-  draw_scene();
+  draw_render_scene();
   total_draw_time = total_draw_time + (millis() - draw_start_time);
 
   uint32_t dac_start_time = millis();
   dac_output();
   total_dac_time = total_dac_time + (millis() - dac_start_time);
 
-  if (millis() - fps_time > 1000) {
+  if (millis() - fps_time > 1000)
+  {
     Serial1.print((float)total_serial_time / 1000.0);
     Serial1.print("% Serial ");
     Serial1.print((float)total_draw_time / 1000.0);

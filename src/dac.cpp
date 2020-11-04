@@ -1,15 +1,13 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#define FLIP_X
-#define FLIP_Y
 
 // Physical Layout
 #define PIN_XW_DAC_CS 6
 #define PIN_YZ_DAC_CS 10
 #define DAC_X_CHAN 1
 #define DAC_Y_CHAN 0
-#define DAC_W_CHAN 1
+#define DAC_W_CHAN 0
 #define DAC_Z_CHAN 1
 
 // SPI Port Memory Addresses for Direct Access
@@ -21,7 +19,7 @@
 #define SPI1ADDR(x) (*(volatile unsigned long *)(0x4039C000 + x))
 
 // Buffer for a full frame of data
-#define DAC_MAX (4096 * 8)  //~20ms worth of DAC samples at 32mhz
+#define DAC_MAX (4096 * 12)  //~20ms worth of DAC samples at 32mhz
 uint16_t dac0[DAC_MAX];
 uint16_t dac1[DAC_MAX];
 int dac_ptr;
@@ -45,19 +43,7 @@ static inline void dac_append(uint16_t buffer1, uint16_t buffer2) {
 }
 
 void dac_append_xy(uint16_t x, uint16_t y) {
-#ifdef FLIP_X
-  x = mpc4921_write(DAC_X_CHAN, 4095 - x);
-#else
-  x = mpc4921_write(DAC_X_CHAN, x);
-#endif
-
-#ifdef FLIP_Y
-  y = mpc4921_write(DAC_Y_CHAN, 4095 - y);
-#else
-  y = mpc4921_write(DAC_Y_CHAN, y);
-#endif
-
-  dac_append(x, y);
+  dac_append(mpc4921_write(DAC_X_CHAN, 4095 - y), mpc4921_write(DAC_Y_CHAN,4095 -  x));
 }
 
 void dac_append_wz(uint16_t w, uint16_t z) {
@@ -79,7 +65,7 @@ void dac_output(void) {
     temp = SPI0ADDR(SPI_RDR);
     digitalWriteFast(PIN_XW_DAC_CS, HIGH);
     digitalWriteFast(PIN_YZ_DAC_CS, HIGH);
-    
+
   }
 }
 
