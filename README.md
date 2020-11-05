@@ -1,5 +1,5 @@
 # open-dvg
-====
+
 This is a heavily modified version of the v.st vector board that targets installation in arcade cabinets with an Electrohome GO5-802 / 805 monitor.
 
 It uses the same serial protocol as the USB-DVG, meaning you can use standard builds of AdvanceMAME with it.
