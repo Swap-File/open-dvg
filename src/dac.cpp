@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-
 // Physical Layout
 #define PIN_XW_DAC_CS 6
 #define PIN_YZ_DAC_CS 10
@@ -43,7 +42,7 @@ static inline void dac_append(uint16_t buffer1, uint16_t buffer2) {
 }
 
 void dac_append_xy(uint16_t x, uint16_t y) {
-  dac_append(mpc4921_write(DAC_X_CHAN, 4095 - y), mpc4921_write(DAC_Y_CHAN,4095 -  x));
+  dac_append(mpc4921_write(DAC_X_CHAN, 4095 - y), mpc4921_write(DAC_Y_CHAN, 4095 - x));
 }
 
 void dac_append_wz(uint16_t w, uint16_t z) {
@@ -60,12 +59,12 @@ void dac_output(void) {
     digitalWriteFast(PIN_XW_DAC_CS, LOW);  // this will go low before x transmission starts
     SPI0ADDR(SPI_TDR) = dac1[i];
     digitalWriteFast(PIN_YZ_DAC_CS, LOW);  // this will go low before y transmission starts
-    delayNanoseconds(1000);  //tune this value based on spi bus speed
+    delayNanoseconds(745);                 //tune this value based on spi bus speed, measured failure at 740
     temp = SPI1ADDR(SPI_RDR);
-    temp = SPI0ADDR(SPI_RDR);
     digitalWriteFast(PIN_XW_DAC_CS, HIGH);
-    digitalWriteFast(PIN_YZ_DAC_CS, HIGH);
+    temp = SPI0ADDR(SPI_RDR);
 
+    digitalWriteFast(PIN_YZ_DAC_CS, HIGH);
   }
 }
 
@@ -87,6 +86,6 @@ void dac_init(void) {
   digitalWriteFast(PIN_YZ_DAC_CS, HIGH);
 }
 
-void dac_reset(void) {
+void dac_buffer_reset(void) {
   dac_ptr = 0;
 }

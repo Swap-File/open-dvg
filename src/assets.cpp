@@ -7,6 +7,7 @@
  * offset ' ' (0x20).
  */
 #include "assets.h"
+
 #include "draw.h"
 
 const hershey_char_t hershey_simplex[] = {
@@ -449,33 +450,26 @@ const hershey_char_t hershey_simplex[] = {
 	},
 };
 
-void moveto(int x, int y)
-{
-  draw_append(x, y, 0);
+void moveto(int x, int y) {
+  draw_pt(x, y, 0);
 }
 
-void lineto(int x, int y)
-{
-  draw_append(x, y, 24); // normal output_brightness
+void lineto(int x, int y) {
+  draw_pt(x, y, 96);  // normal output_brightness
 }
 
-void brightto(int x, int y)
-{
-  draw_append(x, y, 63); // max output_brightness
+void brightto(int x, int y) {
+  draw_pt(x, y, 255);  // max output_brightness
 }
 
-
-int draw_character(char c, int x, int y, int size)
-{
+int draw_character(char c, int x, int y, int size) {
   const hershey_char_t *const f = &hershey_simplex[c - ' '];
   int next_moveto = 1;
 
-  for (int i = 0; i < f->count; i++)
-  {
+  for (int i = 0; i < f->count; i++) {
     int dx = f->points[2 * i + 0];
     int dy = f->points[2 * i + 1];
-    if (dx == -1)
-    {
+    if (dx == -1) {
       next_moveto = 1;
       continue;
     }
@@ -494,19 +488,15 @@ int draw_character(char c, int x, int y, int size)
   return (f->width * size) * 3 / 4;
 }
 
-void draw_string(const char *s, int x, int y, int size)
-{
-  while (*s)
-  {
+void draw_string(const char *s, int x, int y, int size) {
+  while (*s) {
     char c = *s++;
     x += draw_character(c, x, y, size);
   }
 }
 
-
-void draw_test_pattern(void)
-{
-  draw_clear_scene();
+void assets_test_pattern(void) {
+  draw_start_frame();
 
   // fill in some points for test and calibration
   moveto(0, 0);
@@ -541,38 +531,29 @@ void draw_test_pattern(void)
   brightto(2047 + 512, 2047);
 
   // and a gradiant scale
-  for (int i = 1; i < 63; i += 4)
-  {
+  for (int i = 1; i < 63; i += 4) {
     moveto(1600, 2048 + i * 8);
-    draw_append(1900, 2048 + i * 8, i);
+    draw_pt(1900, 2048 + i * 8, i);
   }
 
   // draw the sunburst pattern in the corner
   moveto(0, 0);
-  for (unsigned j = 0, i = 0; j <= 1024; j += 128, i++)
-  {
-    if (i & 1)
-    {
+  for (unsigned j = 0, i = 0; j <= 1024; j += 128, i++) {
+    if (i & 1) {
       moveto(1024, j);
-      draw_append(0, 0, i * 7);
-    }
-    else
-    {
-      draw_append(1024, j, i * 7);
+      draw_pt(0, 0, i * 7);
+    } else {
+      draw_pt(1024, j, i * 7);
     }
   }
 
   moveto(0, 0);
-  for (unsigned j = 0, i = 0; j < 1024; j += 128, i++)
-  {
-    if (i & 1)
-    {
+  for (unsigned j = 0, i = 0; j < 1024; j += 128, i++) {
+    if (i & 1) {
       moveto(j, 1024);
-      draw_append(0, 0, i * 7);
-    }
-    else
-    {
-      draw_append(j, 1024, i * 7);
+      draw_pt(0, 0, i * 7);
+    } else {
+      draw_pt(j, 1024, i * 7);
     }
   }
 
@@ -593,5 +574,6 @@ void draw_test_pattern(void)
 
   draw_string("MCP4922", 2100, y, 3);
   y -= line_size;
-}
 
+  draw_end_frame();
+}
