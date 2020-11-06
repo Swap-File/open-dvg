@@ -7,7 +7,6 @@
  * offset ' ' (0x20).
  */
 #include "assets.h"
-
 #include "draw.h"
 
 const hershey_char_t hershey_simplex[] = {

@@ -23,8 +23,8 @@ bool draw_quality(int i) {
 }
 
 // x and y position are in 12-bit range
-static uint16_t x_pos;
-static uint16_t y_pos;
+static int x_pos;
+static int y_pos;
 
 static void render_line(int x1, int y1, const int bright_shift) {
   int dx;
@@ -41,8 +41,6 @@ static void render_line(int x1, int y1, const int bright_shift) {
   y1 >>= bright_shift;
   int x0 = x_pos >> bright_shift;
   int y0 = y_pos >> bright_shift;
-
-  //dac_append_xy(x_pos, y_pos);
 
   if (x0 <= x1) {
     dx = x1 - x0;
@@ -77,13 +75,16 @@ static void render_line(int x1, int y1, const int bright_shift) {
       y0 += sy;
       y_pos = y_off + (y0 << bright_shift);
     }
+
     dac_append_xy(x_pos, y_pos);
   }
 
   // ensure that we end up exactly where we want
-  x_pos = x1_orig;
-  y_pos = y1_orig;
-  dac_append_xy(x_pos, y_pos);
+  if (x_pos != x1_orig || y_pos != y1_orig) {
+    x_pos = x1_orig;
+    y_pos = y1_orig;
+    dac_append_xy(x_pos, y_pos);
+  }
 }
 
 static void render_brightness(uint16_t bright) {
@@ -105,11 +106,10 @@ static void render_brightness(uint16_t bright) {
 }
 
 void draw_pt(int x1, int y1, uint16_t bright) {
+  render_brightness(bright);
   if (bright == 0) {
-    render_brightness(0);
     render_line(x1, y1, OFF_SHIFT);
   } else {
-    render_brightness(bright);
     render_line(x1, y1, normal_shift);
   }
 }
