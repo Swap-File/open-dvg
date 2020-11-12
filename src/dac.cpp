@@ -22,7 +22,7 @@
 #define SPI1ADDR(x) (*(volatile unsigned long *)(0x4039C000 + x))
 
 // buffer for a full frame of data
-#define DAC_MAX (4096 * 20)  //~20ms worth of DAC samples at 32mhz
+#define DAC_MAX (4096 * 25)
 uint16_t dac0[DAC_MAX];
 uint16_t dac1[DAC_MAX];
 int dac_ptr;
@@ -42,6 +42,7 @@ inline static uint16_t mpc4921_write(int channel, uint16_t value) {
 inline void dac_append(uint16_t buffer1, uint16_t buffer2) {
   dac0[dac_ptr] = buffer1;
   dac1[dac_ptr] = buffer2;
+  if (dac_ptr < DAC_MAX)
   dac_ptr++;
 }
 
@@ -73,7 +74,7 @@ int dac_output(void) {
     digitalWriteFast(DAC_PIN_XW_CS, LOW);  // this will go low before x transmission starts
     SPI0ADDR(SPI_TDR) = dac1[i];
     digitalWriteFast(DAC_PIN_YZ_CS, LOW);  // this will go low before y transmission starts
-    delayNanoseconds(745);                 // tune this value based on spi bus speed, measured failure at 740
+    delayNanoseconds(750);                 // tune this value based on spi bus speed, measured failure at 740
     temp = SPI1ADDR(SPI_RDR);
     digitalWriteFast(DAC_PIN_XW_CS, HIGH);
     temp = SPI0ADDR(SPI_RDR);

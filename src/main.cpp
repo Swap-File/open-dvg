@@ -5,11 +5,8 @@
 #include "dac.h"
 #include "draw.h"
 
-// Maximum amount of time to wait for a frame (in ms).
-#define MAXIMUM_SERIAL_MS 20
-
-// Maximum amount of time to render a scene before switching to lower quality
-#define MAXIMUM_DAC_MS 20
+// how long in milliseconds to wait for data before displaying a test pattern
+#define SERIAL_WAIT_TIME 20
 
 void setup() {
   Serial.begin(115200);   // USB is always 12 Mbit/sec
@@ -32,7 +29,7 @@ void loop() {
       if (coms_read())
         break;
     }
-    if (millis() - draw_start_time > MAXIMUM_SERIAL_MS) {
+    if (millis() - draw_start_time > SERIAL_WAIT_TIME) {
       Serial5.println("Switching to test pattern...");
       test_pattern_enabled = true;
     }
@@ -42,7 +39,7 @@ void loop() {
 
   if (test_pattern_enabled)
     assets_test_pattern();
-  
+
   total_draw_time += (millis() - draw_start_time);
 
   // output the dac buffer
@@ -51,23 +48,16 @@ void loop() {
   dac_output();
 
   fps++;
-  uint32_t dac_cycle_time = millis() - dac_start_time;
+  int dac_cycle_time = millis() - dac_start_time;
   total_dac_time += dac_cycle_time;
-
-  // check DAC time and see if we need to adjust draw quality
-  if (dac_cycle_time > MAXIMUM_DAC_MS) {
-    if (draw_quality(2))
-      Serial5.println("Switching to fast drawing.");
-  } else if (dac_cycle_time < MAXIMUM_DAC_MS / 2) {
-    if (draw_quality(1))
-      Serial5.println("Switching to quality drawing.");
-  }
+ 
+  draw_quality(dac_cycle_time);
 
   // occasionally print out stats for humans
   if (millis() - fps_time > 1000) {
-        Serial5.print((float)total_draw_time / fps);
+    Serial5.print((float)total_draw_time / fps);
     Serial5.print(" draw  ");
-            Serial5.print((float)total_dac_time / fps);
+    Serial5.print((float)total_dac_time / fps);
     Serial5.print(" dac  ");
     Serial5.print(total_draw_time);
     Serial5.print("ms draw  ");

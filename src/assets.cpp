@@ -458,7 +458,8 @@ void lineto(int x, int y) {
 }
 
 void brightto(int x, int y) {
-  draw_pt(x, y, 255);  // max output_brightness
+  //draw_pt(x, y, 255);  // max output_brightness
+    draw_pt(x, y, 96);  // normal output_brightness
 }
 
 int draw_character(char c, int x, int y, int size) {
@@ -495,6 +496,7 @@ void draw_string(const char *s, int x, int y, int size) {
 }
 
 void assets_test_pattern(void) {
+
   draw_start_frame();
 
   // fill in some points for test and calibration
