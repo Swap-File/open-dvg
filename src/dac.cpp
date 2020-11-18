@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+#define DAC_FAST 1
+
 #define DAC_BUFFERED 1
 #define DAC_FLIP_X 1
 #define DAC_FLIP_Y 1
@@ -20,6 +22,7 @@
 #define SPI_RDR 0x74
 #define SPI0ADDR(x) (*(volatile unsigned long *)(0x403A0000 + x))
 #define SPI1ADDR(x) (*(volatile unsigned long *)(0x4039C000 + x))
+#define LPSPI_RSR_RXEMPTY ((uint32_t)(1 << 1))
 
 // buffer for a full frame of data
 #define DAC_MAX (4096 * 25)
@@ -43,7 +46,7 @@ inline void dac_append(uint16_t buffer1, uint16_t buffer2) {
   dac0[dac_ptr] = buffer1;
   dac1[dac_ptr] = buffer2;
   if (dac_ptr < DAC_MAX)
-  dac_ptr++;
+    dac_ptr++;
 }
 
 void dac_append_xy(uint16_t x, uint16_t y) {
@@ -74,7 +77,13 @@ int dac_output(void) {
     digitalWriteFast(DAC_PIN_XW_CS, LOW);  // this will go low before x transmission starts
     SPI0ADDR(SPI_TDR) = dac1[i];
     digitalWriteFast(DAC_PIN_YZ_CS, LOW);  // this will go low before y transmission starts
-    delayNanoseconds(750);                 // tune this value based on spi bus speed, measured failure at 740
+#ifdef DAC_FAST
+    delayNanoseconds(750);  // tune this value based on spi bus speed, measured failure at 740
+#else
+    while (SPI1ADDR(SPI_RSR) & LPSPI_RSR_RXEMPTY) ;  // wait while the RSR fifo is empty...
+    while (SPI0ADDR(SPI_RSR) & LPSPI_RSR_RXEMPTY) ;  // wait while the RSR fifo is empty...
+
+#endif
     temp = SPI1ADDR(SPI_RDR);
     digitalWriteFast(DAC_PIN_XW_CS, HIGH);
     temp = SPI0ADDR(SPI_RDR);
